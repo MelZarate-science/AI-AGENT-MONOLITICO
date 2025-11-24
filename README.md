@@ -56,31 +56,30 @@ uvicorn app.main:app --reload
 
 La API estará disponible en `http://127.0.0.1:8000/docs`
 
-## Corrección Manual del Código Fuente
+## ⚠️ Solución de Problemas Comunes: Error de Compatibilidad de Websockets
 
-Dado que la instalación estándar de pip no podía resolver el error de código dentro del paquete de terceros, tuvimos que aplicar una solución de último recurso: modificar manualmente el código fuente del paquete defectuoso dentro de tu entorno virtual.
+Si al ejecutar la aplicación se encuentra un error relacionado con la librería `realtime` o `websockets` (ej. `ImportError: cannot import name 'ClientConnection'`), se debe a un problema de **compatibilidad** entre el código de un paquete de terceros y las versiones modernas de `websockets`.
 
-1. Identificación y Ubicación
-Localizamos la línea de código problemática, que era la línea 12 del archivo: C:\Users\Angel\Desktop\autostory\venv\Lib\site-packages\realtime\_async\client.py
+Para resolverlo, es necesario aplicar una corrección manual directamente en el código fuente dentro del entorno virtual. Esta corrección debe realizarse solo una vez.
 
-2. Aplicación del Parche de Compatibilidad (Doble Corrección)
-Corregimos la sintaxis obsoleta de la siguiente manera:
+### 1. Ubicación del Archivo
 
-Línea Original Rota:
+Localiza y abre el siguiente archivo dentro de tu entorno virtual (`venv`):
 
-Python
+venv/Lib/site-packages/realtime_async/client.py
 
-from websockets.asyncio.client import ClientConnection
 
-Corrección Final Aplicada:
+### 2. Aplicación del Parche de Compatibilidad
 
-Python
+Edita la **Línea 12** de este archivo para reemplazar la sintaxis obsoleta por la corrección necesaria.
 
-from websockets.client import WebSocketClientProtocol as ClientConnection
-Esta corrección hizo dos cosas:
+| Descripción | Código Obsoleto (Línea 12) | Código Corregido (Línea 12) |
+| :--- | :--- | :--- |
+| **Sintaxis** | `from websockets.asyncio.client import ClientConnection` | `from websockets.client import WebSocketClientProtocol as ClientConnection` |
 
-Utilizó la ubicación correcta para las clases de cliente en las versiones modernas de websockets (websockets.client).
+### 3. Impacto de la Corrección
 
-Renombró la clase moderna (WebSocketClientProtocol) a la clase que el código de realtime esperaba (ClientConnection), resolviendo así el ImportError final.
+Esta modificación resuelve el problema de la siguiente manera:
 
-Al sincronizar manualmente la importación de realtime con tu versión actual de websockets, eliminamos el último obstáculo de compatibilidad, permitiendo que Uvicorn cargara tu aplicación con éxito.
+* Se utiliza la ruta de importación **correcta** para las clases de cliente en las versiones modernas de `websockets` (`websockets.client`).
+* Se renombra la clase moderna (`WebSocketClientProtocol`) al nombre que el código de `realtime` esperaba (`ClientConnection`), resolviendo el `ImportError` y permitiendo que la aplicación se cargue correctamente con Uvicorn.
