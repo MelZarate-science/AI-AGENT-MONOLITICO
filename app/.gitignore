@@ -1,0 +1,15 @@
+# ------------------------------------
+# 1. EXCLUSIÓN MÍNIMA ESENCIAL
+# ------------------------------------
+# ¡CRÍTICO! Excluye la carpeta de tu entorno virtual.
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Base de Datos Local
+*.sqlite3
+*.log
+
+# NOTA: EL ARCHIVO .env NO ESTÁ AQUÍ (como lo solicitaste). 
+# Asegúrate de que tu repositorio sea PRIVADO.
