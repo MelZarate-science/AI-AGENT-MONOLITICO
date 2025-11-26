@@ -7,6 +7,9 @@ el flujo completo de generación de historias.
 """
 
 from fastapi import FastAPI, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.requests import Request
+from fastapi.responses import Response
 
 from app.schemas import StoryRequest, StoryResponse
 from app.services.image_processor import process_image_from_url
@@ -16,14 +19,23 @@ from app.services.generator import generate_narrative
 from app.services.storage import generate_story_id, save_story_to_supabase
 
 import time
-from fastapi.requests import Request
-from fastapi.responses import Response
 
 # Inicializar la aplicación FastAPI
 app = FastAPI(
     title="AutoStory Builder API",
     description="Una API para generar narrativas creativas a partir de imágenes y texto.",
     version="1.0.0"
+)
+
+app.add_middleware(
+  CORSMiddleware,
+  allow_origins=[
+    "https://auto-story-builder-one.vercel.app",
+    "https://id-preview--e5b4310e-df83-40ed-a563-fc6551a3d19e.lovable.app"
+  ],
+  allow_credentials=True,
+  allow_methods=["*"],
+  allow_headers=["*"],
 )
 
 # 🌟 AÑADIR ESTE MIDDLEWARE 🌟
