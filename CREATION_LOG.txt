@@ -1,0 +1,136 @@
+[ORDEN: 01]
+Archivo: autostory/requirements.txt
+Propósito: Definir las dependencias exactas del proyecto.
+Por qué se crea ahora: Es el primer paso para asegurar un entorno de ejecución consistente y reproducible.
+Funciones / Entradas / Salidas:
+  - N/A (Archivo de configuración de dependencias)
+Dependencias: N/A
+Quién lo llama / a quién llama: Es usado por `pip` para instalar las librerías.
+Notas de implementación: Las versiones están fijadas para evitar conflictos y asegurar la estabilidad del stack.
+-------------------------------------------------------------
+[ORDEN: 02]
+Archivo: autostory/.env.example
+Propósito: Especificar las variables de entorno requeridas por la aplicación.
+Por qué se crea ahora: Define la configuración necesaria antes de escribir el código que la consumirá.
+Funciones / Entradas / Salidas:
+  - N/A (Archivo de configuración)
+Dependencias: N/A
+Quién lo llama / a quién llama: Es una plantilla para crear el archivo `.env` real, que es leído por `python-dotenv`.
+Notas de implementación: Este archivo no debe contener secretos y sirve como guía para los desarrolladores.
+-------------------------------------------------------------
+[ORDEN: 03]
+Archivo: autostory/README.md
+Propósito: Proporcionar la documentación esencial para configurar y ejecutar el proyecto.
+Por qué se crea ahora: Es un documento fundamental que guía al usuario desde el inicio.
+Funciones / Entradas / Salidas:
+  - N/A (Archivo de documentación)
+Dependencias: N/A
+Quién lo llama / a quién llama: Es leído por los desarrolladores.
+Notas de implementación: Incluye los comandos exactos para la instalación y ejecución, además de un ejemplo de uso con cURL.
+-------------------------------------------------------------
+[ORDEN: 04]
+Archivo: app/config.py
+Propósito: Cargar y validar las variables de entorno necesarias.
+Por qué se crea ahora: Centraliza el acceso a la configuración antes de que cualquier otro módulo la necesite.
+Funciones / Entradas / Salidas:
+  - get_env_variable(in: str) -> out: str : Obtiene una variable de entorno o falla.
+Dependencias: python-dotenv (librería), .env (archivo).
+Quién lo llama / a quién llama: Será importado por los módulos que necesiten acceso a las claves de API o URLs de servicios.
+Notas de implementación: Lanza un error si una variable crítica no está definida, promoviendo un fallo rápido.
+-------------------------------------------------------------
+[ORDEN: 05]
+Archivo: app/schemas.py
+Propósito: Definir los modelos de datos para las solicitudes y respuestas de la API.
+Por qué se crea ahora: Establece los contratos de datos que la API usará, guiando la implementación de los endpoints.
+Funciones / Entradas / Salidas:
+  - Formato(Enum): Define los formatos de narrativa.
+  - Tono(Enum): Define los tonos de narrativa.
+  - StoryRequest(BaseModel): Valida el cuerpo de la solicitud POST /story.
+  - StoryResponse(BaseModel): Define la estructura de la respuesta JSON.
+Dependencias: pydantic (librería), enum (built-in).
+Quién lo llama / a quién llama: Es importado por `app/main.py` para la validación de datos en los endpoints.
+Notas de implementación: Usa Enums para restringir los valores de 'formato' y 'tono', y HttpUrl para validar la URL de la imagen.
+-------------------------------------------------------------
+[ORDEN: 06]
+Archivo: app/utils/http.py
+Propósito: Proporcionar una función segura para descargar imágenes.
+Por qué se crea ahora: Es una dependencia fundamental para el módulo de procesamiento de imágenes.
+Funciones / Entradas / Salidas:
+  - download_image_async(in: str) -> out: Optional[bytes] : Descarga una imagen desde una URL y devuelve sus bytes.
+Dependencias: httpx (librería).
+Quién lo llama / a quién llama: Es llamado por `app/services/image_processor.py`.
+Notas de implementación: Utiliza una petición HEAD para validar el `Content-Type` antes de descargar el contenido completo, optimizando el uso de red. Maneja errores de red y de estado HTTP.
+-------------------------------------------------------------
+[ORDEN: 07]
+Archivo: app/services/image_processor.py
+Propósito: Orquestar la descarga y procesamiento de la imagen de entrada.
+Por qué se crea ahora: Es el primer paso del pipeline de preprocesamiento.
+Funciones / Entradas / Salidas:
+  - _process_image_in_memory(in: bytes) -> out: Optional[bytes] : Función síncrona que redimensiona y convierte la imagen.
+  - process_image_from_url(in: str) -> out: bytes : Función asíncrona que descarga y procesa la imagen.
+Dependencias: Pillow (librería), app/utils/http.py.
+Quién lo llama / a quién llama: Llama a `download_image_async` y es llamado por el endpoint en `app/main.py`.
+Notas de implementación: Separa la lógica de procesamiento síncrona (`_process_image_in_memory`) de la orquestación asíncrona. Usa `thumbnail` para mantener el aspect ratio y `LANCZOS` para un redimensionamiento de alta calidad.
+-------------------------------------------------------------
+[ORDEN: 08]
+Archivo: app/services/text_processor.py
+Propósito: Limpiar y normalizar el texto proporcionado por el usuario.
+Por qué se crea ahora: Es el segundo paso del pipeline de preprocesamiento, paralelo al de la imagen.
+Funciones / Entradas / Salidas:
+  - preprocess_text(in: str) -> out: str : Normaliza espacios y elimina espacios en blanco de los extremos.
+Dependencias: re (built-in).
+Quién lo llama / a quién llama: Es llamado por el `prompt_builder.py` o directamente en el flujo principal de `app/main.py`.
+Notas de implementación: La limpieza es mínima para preservar la intención original del usuario, enfocándose en la normalización de espacios.
+-------------------------------------------------------------
+[ORDEN: 09]
+Archivo: app/services/captioner.py
+Propósito: Generar descripciones técnicas de la imagen usando Gemini Vision.
+Por qué se crea ahora: Es el tercer paso del pipeline, que enriquece el contexto para la generación final.
+Funciones / Entradas / Salidas:
+  - generate_captions_from_image(in: bytes) -> out: str : Envía la imagen a Gemini y devuelve los captions.
+Dependencias: google-generativeai (librería), Pillow (librería), app/config.py.
+Quién lo llama / a quién llama: Es llamado por el flujo principal en `app/main.py` después del procesamiento de la imagen.
+Notas de implementación: Configura el cliente de Gemini al inicio. El prompt está diseñado para obtener descripciones objetivas que sirvan como base para el `prompt_builder`.
+-------------------------------------------------------------
+[ORDEN: 10]
+Archivo: app/services/prompt_builder.py
+Propósito: Ensamblar el prompt final para la generación de la narrativa.
+Por qué se crea ahora: Es el paso previo a la generación de texto, donde se consolida toda la información recolectada y procesada.
+Funciones / Entradas / Salidas:
+  - build_final_prompt(in: str, str, Formato, Tono) -> out: str : Combina los inputs en un prompt estructurado.
+Dependencias: app/schemas.py.
+Quién lo llama / a quién llama: Es llamado por `app/services/generator.py` o el flujo principal.
+Notas de implementación: El prompt está cuidadosamente estructurado con un `system_prompt` y secciones claras para guiar al modelo de IA de manera efectiva.
+-------------------------------------------------------------
+[ORDEN: 11]
+Archivo: app/services/generator.py
+Propósito: Generar la narrativa final llamando al modelo de texto de Gemini.
+Por qué se crea ahora: Es el núcleo del pipeline de generación, que produce el resultado final.
+Funciones / Entradas / Salidas:
+  - generate_narrative(in: str, str, Formato, Tono) -> out: str : Orquesta la construcción del prompt y la llamada a la API para generar la historia.
+Dependencias: google-generativeai (librería), app/config.py, app/services/prompt_builder.py, app/schemas.py.
+Quién lo llama / a quién llama: Llama a `build_final_prompt` y es llamado por el flujo principal en `app/main.py`.
+Notas de implementación: Este servicio encapsula la lógica de generación. Llama al `prompt_builder` para mantener la separación de responsabilidades.
+-------------------------------------------------------------
+[ORDEN: 12]
+Archivo: app/services/storage.py
+Propósito: Persistir las entradas y salidas del proceso en una base de datos Supabase.
+Por qué se crea ahora: Es el último paso del pipeline, encargado de registrar el trabajo realizado.
+Funciones / Entradas / Salidas:
+  - generate_story_id() -> out: str : Crea un ID único para la historia.
+  - save_story_to_supabase(in: str, StoryRequest, str) -> out: None : Guarda los datos en las tablas 'inputs' y 'stories'.
+Dependencias: supabase (librería), uuid (built-in), app/config.py, app/schemas.py.
+Quién lo llama / a quién llama: Es llamado por el flujo principal en `app/main.py` al final del proceso.
+Notas de implementación: El cliente de Supabase se inicializa una vez. La función de guardado está diseñada para no fallar de forma crítica si la conexión a la base de datos falla, permitiendo que el usuario reciba la narrativa aunque no se pueda guardar.
+-------------------------------------------------------------
+[ORDEN: 13]
+Archivo: app/main.py
+Propósito: Definir la aplicación FastAPI y orquestar el pipeline completo.
+Por qué se crea ahora: Es el archivo final que une todos los servicios en un endpoint funcional.
+Funciones / Entradas / Salidas:
+  - create_story_endpoint(in: StoryRequest) -> out: StoryResponse : Endpoint POST /story que ejecuta todo el flujo.
+  - read_root() -> out: dict : Endpoint GET / para health check.
+Dependencias: fastapi (librería), app/schemas.py, y todos los módulos de `app/services`.
+Quién lo llama / a quién llama: Es el punto de entrada para el servidor Uvicorn. Llama a todos los servicios en secuencia.
+Notas de implementación: Utiliza `BackgroundTasks` para que el guardado en la base de datos no retrase la respuesta al usuario. Define un endpoint raíz para verificar el estado de la API.
+-------------------------------------------------------------
