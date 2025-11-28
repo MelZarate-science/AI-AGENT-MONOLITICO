@@ -8,7 +8,7 @@ básica de texto de entrada del usuario.
 
 import re
 
-def preprocess_text(text: str) -> str:
+def preprocess_text(texto: str) -> str:
     """
     Realiza una limpieza y normalización básica del texto.
 
@@ -24,11 +24,11 @@ def preprocess_text(text: str) -> str:
     Returns:
         El texto preprocesado.
     """
-    if not isinstance(text, str):
+    if not isinstance(texto, str):
         return ""
 
     # Eliminar espacios al inicio y al final
-    processed_text = text.strip()
+    processed_text = texto.strip()
 
     # Reemplazar múltiples espacios, tabulaciones y saltos de línea con un solo espacio
     processed_text = re.sub(r'\s+', ' ', processed_text)

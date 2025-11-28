@@ -56,15 +56,15 @@ async def add_process_time_header(request: Request, call_next):
 
 @app.post("/story", response_model=StoryResponse)
 async def create_story_endpoint(
-    image_file: UploadFile | None = File(None),     # AHORA OPCIONAL
-    user_text: str | None = Form(None),             # AHORA OPCIONAL
+    image: UploadFile | None = File(None),     # AHORA OPCIONAL
+    texto: str | None = Form(None),             # AHORA OPCIONAL
     formato: Formato = Form(...),
     tono: Tono = Form(...),
     background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
     
     # Validación lógica general
-    if not image_file and not user_text:
+    if not image and not texto:
         raise HTTPException(
             status_code=400,
             detail="Debes enviar una imagen o un texto para generar una historia."
@@ -74,13 +74,13 @@ async def create_story_endpoint(
     processed_image_bytes = None
     image_captions = ""
 
-    if image_file:
-        image_bytes = await image_file.read()
+    if image:
+        image_bytes = await image.read()
         processed_image_bytes = _process_image_in_memory(image_bytes)
         image_captions = await generate_captions_from_image(processed_image_bytes)
 
     # --- TEXTO ---
-    processed_text = preprocess_text(user_text) if user_text else ""
+    processed_text = preprocess_text(texto) if texto else ""
 
     # --- GENERACIÓN ---
     final_narrative = await generate_narrative(
@@ -96,8 +96,8 @@ async def create_story_endpoint(
     background_tasks.add_task(
         save_story_to_supabase,
         story_id=story_id,
-        image_url=image_file.filename if image_file else None,
-        user_text=user_text,
+        image_url=image.filename if image else None,
+        user_text=texto,
         formato=formato,
         tono=tono,
         narrative=final_narrative
