@@ -11,7 +11,7 @@ from io import BytesIO
 from typing import Optional
 from fastapi import HTTPException
 
-from app.utils.http import download_image_async
+#from app.utils.http import download_image_async
 
 def _process_image_in_memory(image_bytes: bytes) -> Optional[bytes]:
     """
@@ -45,33 +45,33 @@ def _process_image_in_memory(image_bytes: bytes) -> Optional[bytes]:
         print(f"Error inesperado durante el procesamiento de la imagen: {e}")
         return None
 
-async def process_image_from_url(image_url: str) -> bytes:
-    """
-    Orquesta la descarga y procesamiento de una imagen desde una URL.
+#async def process_image_from_url(image_url: str) -> bytes:
+#    """
+#    Orquesta la descarga y procesamiento de una imagen desde una URL.
 
-    Args:
-        image_url: La URL de la imagen a procesar.
+#    Args:
+#        image_url: La URL de la imagen a procesar.
 
-    Returns:
-        Los bytes de la imagen procesada.
+#    Returns:
+#        Los bytes de la imagen procesada.
 
-    Raises:
-        HTTPException: Si la imagen no se puede descargar o procesar.
-    """
+#    Raises:
+#        HTTPException: Si la imagen no se puede descargar o procesar.
+#    """
     # Descargar la imagen
-    image_bytes = await download_image_async(image_url)
-    if not image_bytes:
-        raise HTTPException(
-            status_code=400,
-            detail="No se pudo descargar o validar la imagen desde la URL proporcionada."
-        )
+    #image_bytes = await download_image_async(image_url)
+    #if not image_bytes:
+    #    raise HTTPException(
+    #        status_code=400,
+    #        detail="No se pudo descargar o validar la imagen desde la URL proporcionada."
+    #    )
 
     # Procesar la imagen (FastAPI ejecutará esto en un threadpool si es necesario)
-    processed_image_bytes = _process_image_in_memory(image_bytes)
-    if not processed_image_bytes:
-        raise HTTPException(
-            status_code=422,
-            detail="No se pudo procesar la imagen. El archivo puede estar corrupto o en un formato no soportado."
-        )
+#    processed_image_bytes = _process_image_in_memory(image_bytes)
+#    if not processed_image_bytes:
+#        raise HTTPException(
+#            status_code=422,
+#            detail="No se pudo procesar la imagen. El archivo puede estar corrupto o en un formato no soportado."
+#        )
 
-    return processed_image_bytes
+#    return processed_image_bytes

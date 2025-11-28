@@ -20,27 +20,6 @@ class Tono(str, Enum):
     INSPIRACIONAL = "Inspiracional"
     EDUCATIVO = "Educativo"
     TECNICO = "Técnico"
-
-class StoryRequest(BaseModel):
-    """
-    Esquema para la solicitud de creación de una historia.
-    Valida los datos de entrada del endpoint /story.
-    """
-    image_url: HttpUrl
-    user_text: str
-    formato: Formato
-    tono: Tono
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "image_url": "https://images.unsplash.com/photo-1517329782489-94932c444a6e",
-                "user_text": "Una reflexión sobre la importancia de la perseverancia.",
-                "formato": "Post Social",
-                "tono": "Inspiracional"
-            }
-        }
-
 class StoryResponse(BaseModel):
     """
     Esquema para la respuesta de la creación de una historia.

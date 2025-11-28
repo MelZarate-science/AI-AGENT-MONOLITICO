@@ -9,17 +9,24 @@ la API REST de Supabase, evitando los problemas del antiguo cliente Python.
 import uuid
 import httpx
 from fastapi import HTTPException
-
+from app.schemas import Formato, Tono
 from app.config import SUPABASE_URL, SUPABASE_KEY
-from app.schemas import StoryRequest
+#from app.schemas import StoryRequest
 
 
 def generate_story_id() -> str:
     """Genera un ID único con prefijo 'sto_'."""
     return f"sto_{uuid.uuid4().hex[:12]}"
 
-
-async def save_story_to_supabase(story_id: str, request_data: StoryRequest, narrative: str) -> None:
+async def save_story_to_supabase(
+    story_id: str, 
+    # NUEVA FIRMA: Recibe todos los campos individualmente
+    image_url: str,         # Recibirá el placeholder del filename
+    user_text: str,
+    formato: Formato,       # Tipo Formato (del Enum)
+    tono: Tono,             # Tipo Tono (del Enum)
+    narrative: str
+) -> None:
     """
     Guarda la narrativa generada y los inputs originales en Supabase usando REST.
 
@@ -48,10 +55,14 @@ async def save_story_to_supabase(story_id: str, request_data: StoryRequest, narr
     # ---- 2. Insert en tabla 'inputs'
     input_payload = {
         "story_id": story_id,
-        "image_url": str(request_data.image_url),
-        "user_text": request_data.user_text,
-        "formato": request_data.formato.value,
-        "tono": request_data.tono.value
+        # CAMBIO: Usamos el parámetro 'image_url' (que es el filename o la URL real si elegiste la Opción B)
+        "image_url": image_url, 
+        # CAMBIO: Usamos el parámetro 'user_text'
+        "user_text": user_text,
+        # CAMBIO: Usamos el parámetro 'formato'
+        "formato": formato.value,
+        # CAMBIO: Usamos el parámetro 'tono'
+        "tono": tono.value
     }
 
     async with httpx.AsyncClient() as client:
