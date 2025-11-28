@@ -56,60 +56,56 @@ async def add_process_time_header(request: Request, call_next):
 
 @app.post("/story", response_model=StoryResponse)
 async def create_story_endpoint(
-    image_file: UploadFile = File(..., description="La imagen a procesar."), # Cambio 1
-    user_text: str = Form(..., description="El texto central del usuario."),   # Cambio ,2
-    formato: Formato = Form(..., description="El formato de la narrativa."),  # Cambio 3
-    tono: Tono = Form(..., description="El tono de la narrativa."),         # Cambio 4
-    background_tasks: BackgroundTasks = BackgroundTasks(),):
-
-    # --- Lectura del archivo y Preprocesamiento ---
+    image_file: UploadFile | None = File(None),     # AHORA OPCIONAL
+    user_text: str | None = Form(None),             # AHORA OPCIONAL
+    formato: Formato = Form(...),
+    tono: Tono = Form(...),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
+):
     
-    # 1.1. Leer el archivo cargado en memoria (Async)
-    image_bytes = await image_file.read()
-
-    # 1. PREPROCESAMIENTO DE IMAGEN
-    processed_image_bytes = _process_image_in_memory(image_bytes)
-
-    if not processed_image_bytes:
+    # Validación lógica general
+    if not image_file and not user_text:
         raise HTTPException(
-            status_code=422,
-            detail="No se pudo procesar la imagen. El archivo puede estar corrupto o en un formato no soportado."
+            status_code=400,
+            detail="Debes enviar una imagen o un texto para generar una historia."
         )
 
-    # 2. PREPROCESAMIENTO DE TEXTO
+    # --- IMAGEN ---
+    processed_image_bytes = None
+    image_captions = ""
 
-    processed_text = preprocess_text(user_text)
+    if image_file:
+        image_bytes = await image_file.read()
+        processed_image_bytes = _process_image_in_memory(image_bytes)
+        image_captions = await generate_captions_from_image(processed_image_bytes)
 
-    # 3. CAPTIONING
-    image_captions = await generate_captions_from_image(processed_image_bytes)
+    # --- TEXTO ---
+    processed_text = preprocess_text(user_text) if user_text else ""
 
-    # 3. GENERACIÓN
-    # (El ensamblaje del prompt se hace dentro de generate_narrative)
+    # --- GENERACIÓN ---
     final_narrative = await generate_narrative(
         image_captions=image_captions,
         user_text=processed_text,
-        formato= formato,
-        tono= tono
+        formato=formato,
+        tono=tono
     )
 
-    # 5. STORAGE (en segundo plano)
+    # --- STORAGE ---
     story_id = generate_story_id()
-    
-    # ¡CORRECCIÓN CRÍTICA! 
-    # Ya no se usa 'request', se pasan los argumentos individuales.
-    # image_url usa el nombre del archivo como placeholder (Opción A).
+
     background_tasks.add_task(
         save_story_to_supabase,
         story_id=story_id,
-        image_url=f"Uploaded File: {image_file.filename}", 
+        image_url=image_file.filename if image_file else None,
         user_text=user_text,
         formato=formato,
         tono=tono,
         narrative=final_narrative
     )
 
-    # 6. RESPUESTA
     return StoryResponse(story_id=story_id, narrative=final_narrative)
+
+
 
 @app.get("/", summary="Health Check")
 def read_root():
