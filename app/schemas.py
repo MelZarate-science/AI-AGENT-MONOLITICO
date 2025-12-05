@@ -8,16 +8,15 @@ from pydantic import BaseModel, HttpUrl
 from enum import Enum
 
 class Formato(str, Enum):
-    """Formatos de narrativa permitidos."""
-    POST_SOCIAL = "Post social"
-    STORYTELLING_IMPACTO = "Storytelling de impacto"
-    RESUMEN_CASO = "Resumen de caso"
+    storytelling = "storytelling"
+    post = "post"
+    caso = "caso"
 
 class Tono(str, Enum):
-    """Tonos de narrativa permitidos."""
-    INSPIRACIONAL = "Inspiracional"
-    EDUCATIVO = "Educativo"
-    TECNICO = "Técnico"
+    inspiracional = "inspiracional"
+    educativo = "educativo"
+    tecnico = "tecnico"
+    
 class StoryResponse(BaseModel):
     """
     Esquema para la respuesta de la creación de una historia.
