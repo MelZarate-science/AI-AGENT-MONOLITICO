@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Servicio de construcción de prompts.
+""" Servicio de construcción de prompts.
 
 Este módulo ensambla el prompt final que se enviará al modelo de IA
 generativa, combinando el contexto de la imagen, el texto del usuario
@@ -10,7 +8,6 @@ y las directivas de formato y tono.
 from app.schemas import Formato, Tono
 
 def build_final_prompt(
-    image_captions: str,
     user_text: str,
     formato: Formato,
     tono: Tono
@@ -36,12 +33,7 @@ def build_final_prompt(
 
     final_prompt = f"""
     {system_prompt}
-
-    **Contexto de la Imagen (Análisis Técnico):**
-    ---
-    {image_captions}
-    ---
-
+    
     **Texto del Usuario (Idea Central):**
     ---
     {user_text}

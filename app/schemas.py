@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Modelos de datos (esquemas) para la validación de entradas y salidas de la API.
+"""Modelos de datos (esquemas) para la validación de entradas y salidas de la API.
 
 Este módulo utiliza Pydantic para definir los esquemas de datos que FastAPI
 usará para validar las solicitudes (`requests`) y formatear las respuestas (`responses`).
@@ -11,9 +9,9 @@ from enum import Enum
 
 class Formato(str, Enum):
     """Formatos de narrativa permitidos."""
-    POST_SOCIAL = "Post Social"
-    STORYTELLING_IMPACTO = "Storytelling de Impacto"
-    RESUMEN_CASO = "Resumen de Caso"
+    POST_SOCIAL = "Post social"
+    STORYTELLING_IMPACTO = "Storytelling de impacto"
+    RESUMEN_CASO = "Resumen de caso"
 
 class Tono(str, Enum):
     """Tonos de narrativa permitidos."""
@@ -35,3 +33,7 @@ class StoryResponse(BaseModel):
                 "narrative": "En el camino de la vida, cada paso cuenta. La perseverancia es la luz que guía nuestros sueños..."
             }
         }
+
+class EditNarrativeRequest(BaseModel):
+    story_id: str
+    narrative: str

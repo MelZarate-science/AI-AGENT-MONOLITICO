@@ -20,19 +20,18 @@ def generate_story_id() -> str:
 
 async def save_story_to_supabase(
     story_id: str, 
-    # NUEVA FIRMA: Recibe todos los campos individualmente
-    image_url: str,         # Recibirá el placeholder del filename
+    image_url: str | None,         
     user_text: str,
     formato: Formato,       # Tipo Formato (del Enum)
     tono: Tono,             # Tipo Tono (del Enum)
     narrative: str
 ) -> None:
+    
     """
-    Guarda la narrativa generada y los inputs originales en Supabase usando REST.
-
-    Se realizan dos inserciones:
-    1. Tabla stories  (padre)
-    2. Tabla inputs   (hijo)
+    Guarda:
+    - story (id)
+    - inputs (imagen, texto, formato, tono)
+    - version v1.0 (narrative)
     """
 
     if not SUPABASE_URL or not SUPABASE_KEY:
@@ -43,49 +42,123 @@ async def save_story_to_supabase(
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
         "Content-Type": "application/json",
-        "Prefer": "return=minimal"  # evita respuesta pesada
-    }
-
-    # ---- 1. Insert en tabla 'stories'
-    story_payload = {
-        "id": story_id,
-        "narrative_v1": narrative
-    }
-
-    # ---- 2. Insert en tabla 'inputs'
-    input_payload = {
-        "story_id": story_id,
-        # CAMBIO: Usamos el parámetro 'image_url' (que es el filename o la URL real si elegiste la Opción B)
-        "image_url": image_url, 
-        # CAMBIO: Usamos el parámetro 'user_text'
-        "user_text": user_text,
-        # CAMBIO: Usamos el parámetro 'formato'
-        "formato": formato.value,
-        # CAMBIO: Usamos el parámetro 'tono'
-        "tono": tono.value
+        "Prefer": "return=minimal" 
     }
 
     async with httpx.AsyncClient() as client:
-        # Insert historia
+
+        # -------------------------
+        # 1) Insert story raíz
+        # -------------------------
         r1 = await client.post(
             f"{SUPABASE_URL}/rest/v1/stories",
             headers=headers,
-            json=story_payload
+            json={"id": story_id}
         )
 
         if r1.status_code >= 300:
             print("❌ Error guardando story:", r1.text)
             return
 
-        # Insert inputs
+        # -------------------------
+        # 2) Insert inputs originales
+        # -------------------------
         r2 = await client.post(
             f"{SUPABASE_URL}/rest/v1/inputs",
             headers=headers,
-            json=input_payload
+            json={
+                "story_id": story_id,
+                "image_url": image_url,
+                "user_text": user_text,
+                "formato": formato.value,
+                "tono": tono.value
+            }
         )
 
         if r2.status_code >= 300:
             print("❌ Error guardando inputs:", r2.text)
             return
 
-    print("✅ Datos guardados en Supabase correctamente.")
+        # -------------------------
+        # 3) Insert versión 1.0
+        # -------------------------
+        r3 = await client.post(
+            f"{SUPABASE_URL}/rest/v1/story_versions",
+            headers=headers,
+            json={
+                "story_id": story_id,
+                "major": 1,
+                "minor": 0,
+                "narrative": narrative
+            }
+        )
+
+        if r3.status_code >= 300:
+            print("❌ Error guardando versión:", r3.text)
+            return
+
+    print("✅ Story, inputs y v1.0 guardados correctamente.")
+
+async def save_minor_version(
+    story_id: str,
+    narrative: str
+) -> dict:
+    """
+    Busca la última versión (major, minor)
+    y guarda una nueva versión minor += 1.
+    """
+
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        raise HTTPException(500, "Supabase no configurado")
+
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    async with httpx.AsyncClient() as client:
+
+        # 1) Obtener última versión
+        query = (
+            f"{SUPABASE_URL}/rest/v1/story_versions"
+            f"?story_id=eq.{story_id}"
+            f"&order=major.desc,minor.desc"
+            f"&limit=1"
+        )
+
+        r_latest = await client.get(query, headers=headers)
+        if r_latest.status_code != 200:
+            raise HTTPException(500, "Error buscando última versión")
+
+        versions = r_latest.json()
+        if not versions:
+            raise HTTPException(404, "No existen versiones para este story_id")
+
+        major = versions[0]["major"]
+        minor = versions[0]["minor"]
+
+        # 2) Nueva versión: incrementa el minor
+        new_major = major
+        new_minor = minor + 1
+
+        payload = {
+            "story_id": story_id,
+            "major": new_major,
+            "minor": new_minor,
+            "narrative": narrative
+        }
+
+        r_insert = await client.post(
+            f"{SUPABASE_URL}/rest/v1/story_versions",
+            headers=headers,
+            json=payload
+        )
+
+        if r_insert.status_code >= 300:
+            raise HTTPException(500, f"Error guardando nueva versión: {r_insert.text}")
+
+    return {
+        "major": new_major,
+        "minor": new_minor
+    }

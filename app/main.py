@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Punto de entrada principal de la API AutoStory Builder.
+"""Punto de entrada principal de la API AutoStory Builder.
 
 Este módulo define la aplicación FastAPI y sus endpoints. Orquesta
 el flujo completo de generación de historias.
@@ -10,12 +8,11 @@ from fastapi import FastAPI, BackgroundTasks, File, Form, UploadFile  # Se añad
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
 from fastapi.responses import Response
+import httpx
 
 
-from app.schemas import StoryResponse, Tono, Formato    
-from app.services.image_processor import _process_image_in_memory
+from app.schemas import StoryResponse, Tono, Formato, EditNarrativeRequest    
 from app.services.text_processor import preprocess_text
-from app.services.captioner import generate_captions_from_image
 from app.services.generator import generate_narrative
 from app.services.storage import generate_story_id, save_story_to_supabase
 
@@ -56,55 +53,68 @@ async def add_process_time_header(request: Request, call_next):
 
 @app.post("/story", response_model=StoryResponse)
 async def create_story_endpoint(
-    image: UploadFile | None = File(None),     # AHORA OPCIONAL
-    texto: str | None = Form(None),             # AHORA OPCIONAL
+    image: UploadFile | None = File(None),
+    texto: str | None = Form(None),
     formato: Formato = Form(...),
     tono: Tono = Form(...),
     background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
-    
-    # Validación lógica general
+    # --- Validación ---
     if not image and not texto:
         raise HTTPException(
             status_code=400,
             detail="Debes enviar una imagen o un texto para generar una historia."
         )
 
-    # --- IMAGEN ---
-    processed_image_bytes = None
-    image_captions = ""
-
+    # --- Imagen ---
+    image_bytes = None
     if image:
         image_bytes = await image.read()
-        processed_image_bytes = _process_image_in_memory(image_bytes)
-        image_captions = await generate_captions_from_image(processed_image_bytes)
 
-    # --- TEXTO ---
+    # --- Texto ---
     processed_text = preprocess_text(texto) if texto else ""
 
-    # --- GENERACIÓN ---
+    # --- Generación multimodal ---
     final_narrative = await generate_narrative(
-        image_captions=image_captions,
+        image_bytes=image_bytes,
         user_text=processed_text,
         formato=formato,
         tono=tono
     )
 
-    # --- STORAGE ---
+    # --- Versión 1.0 ---
     story_id = generate_story_id()
 
     background_tasks.add_task(
         save_story_to_supabase,
         story_id=story_id,
-        image_url=image.filename if image else None,
+        image_url=None,            # Ya no se usa
         user_text=texto,
         formato=formato,
         tono=tono,
         narrative=final_narrative
     )
 
-    return StoryResponse(story_id=story_id, narrative=final_narrative)
+    return StoryResponse(
+        story_id=story_id,
+        narrative=final_narrative
+    )
 
+from app.services.storage import save_minor_version
+
+@app.post("/save_edit")
+async def save_edit(req: EditNarrativeRequest):
+
+    result = await save_minor_version(
+        story_id=req.story_id,
+        narrative=req.narrative
+    )
+
+    return {
+        "status": "ok",
+        "version": f"{result['major']}.{result['minor']}",
+        "message": "Versión guardada correctamente"
+    }
 
 
 @app.get("/", summary="Health Check")
