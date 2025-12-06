@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Servicio de preprocesamiento de texto.
+"""Servicio de preprocesamiento de texto.
 
 Este módulo contiene funciones para la limpieza y normalización
 básica de texto de entrada del usuario.

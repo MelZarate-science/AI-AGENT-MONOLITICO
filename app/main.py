@@ -100,10 +100,9 @@ async def create_story_endpoint(
         narrative=final_narrative
     )
 
-from app.services.storage import save_minor_version
-
 @app.post("/save_edit")
 async def save_edit(req: EditNarrativeRequest):
+    from app.services.storage import save_minor_version
 
     result = await save_minor_version(
         story_id=req.story_id,

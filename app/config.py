@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Módulo de configuración para cargar variables de entorno.
+"""Módulo de configuración para cargar variables de entorno.
 
 Este módulo utiliza python-dotenv para cargar variables desde un archivo .env
 y las expone para ser utilizadas en toda la aplicación.

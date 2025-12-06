@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Servicio de almacenamiento de datos con Supabase (REST).
+"""Servicio de almacenamiento de datos con Supabase (REST).
 
 Este módulo registra las historias y sus inputs usando exclusivamente
 la API REST de Supabase, evitando los problemas del antiguo cliente Python.
