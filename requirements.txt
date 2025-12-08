@@ -6,3 +6,5 @@ google-generativeai
 httpx
 Jinja2
 WeasyPrint==62.3
+python-multipart>=0.0.9
+pydantic
