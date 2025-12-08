@@ -17,51 +17,63 @@ def generate_story_id() -> str:
     return f"sto_{uuid.uuid4().hex[:12]}"
 
 async def save_story_to_supabase(
-    story_id: str, 
-    image_url: str | None,         
+    story_id: str,
+    image_url: str | None,        
     user_text: str,
-    formato: Formato,       # Tipo Formato (del Enum)
-    tono: Tono,             # Tipo Tono (del Enum)
+    formato: Formato,
+    tono: Tono,
     narrative: str
-) -> None:
-    
+):
     """
-    Guarda:
-    - story (id)
-    - inputs (imagen, texto, formato, tono)
-    - version v1.0 (narrative)
+    Crea una historia NUEVA.
+    Determina automáticamente:
+    - major version = siguiente disponible (1, 2, 3…)
+    - minor = 0
     """
 
     if not SUPABASE_URL or not SUPABASE_KEY:
-        print("⚠ Advertencia: Variables de entorno de Supabase no configuradas.")
+        print("⚠ Supabase no configurado.")
         return
 
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "application/json",
-        "Prefer": "return=minimal" 
+        "Content-Type": "application/json"
     }
 
     async with httpx.AsyncClient() as client:
 
-        # -------------------------
-        # 1) Insert story raíz
-        # -------------------------
-        r1 = await client.post(
+        # 1) Obtener mayor versión existente
+        query = (
+            f"{SUPABASE_URL}/rest/v1/story_versions"
+            "?select=major"
+            "&order=major.desc"
+            "&limit=1"
+        )
+        r = await client.get(query, headers=headers)
+
+        if r.status_code != 200:
+            raise HTTPException(500, "Error obteniendo versión mayor")
+
+        data = r.json()
+
+        if data:
+            next_major = data[0]["major"] + 1
+        else:
+            next_major = 1
+
+        # minor siempre arranca en 0
+        next_minor = 0
+
+        # 2) Insert story raíz
+        await client.post(
             f"{SUPABASE_URL}/rest/v1/stories",
             headers=headers,
             json={"id": story_id}
         )
 
-        if r1.status_code >= 300:
-            print("❌ Error guardando story:", r1.text)
-            return
-
-        # -------------------------
-        # 2) Insert inputs originales
-        # -------------------------
-        r2 = await client.post(
+        # 3) Insert inputs
+        await client.post(
             f"{SUPABASE_URL}/rest/v1/inputs",
             headers=headers,
             json={
@@ -73,29 +85,19 @@ async def save_story_to_supabase(
             }
         )
 
-        if r2.status_code >= 300:
-            print("❌ Error guardando inputs:", r2.text)
-            return
-
-        # -------------------------
-        # 3) Insert versión 1.0
-        # -------------------------
-        r3 = await client.post(
+        # 4) Insert versión mayor real
+        await client.post(
             f"{SUPABASE_URL}/rest/v1/story_versions",
             headers=headers,
             json={
                 "story_id": story_id,
-                "major": 1,
-                "minor": 0,
+                "major": next_major,
+                "minor": next_minor,
                 "narrative": narrative
             }
         )
 
-        if r3.status_code >= 300:
-            print("❌ Error guardando versión:", r3.text)
-            return
-
-    print("✅ Story, inputs y v1.0 guardados correctamente.")
+    print(f"✅ Historia guardada como v{next_major}.{next_minor}")
 
 async def save_minor_version(
     story_id: str,
