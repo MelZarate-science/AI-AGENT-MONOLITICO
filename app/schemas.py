@@ -37,3 +37,29 @@ class StoryResponse(BaseModel):
 class EditNarrativeRequest(BaseModel):
     story_id: str
     narrative: str
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "story_id": "sto_a1b2c3d4e5f6",
+                "narrative": "Una versión editada y mejorada de la narrativa original."
+            }
+        }
+
+class StoryVersion(BaseModel):
+    major: int
+    minor: int
+    narrative: str
+    created_at: str
+
+class StoryVersionList(BaseModel):
+    versions: list[StoryVersion]
+
+class ExportFormat(str, Enum):
+    """Formatos de exportación permitidos."""
+    PDF = "pdf"
+    HTML = "html"
+
+class ExportRequest(BaseModel):
+    narrative: str
+    format: ExportFormat

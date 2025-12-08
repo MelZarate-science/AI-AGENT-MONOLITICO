@@ -160,3 +160,30 @@ async def save_minor_version(
         "major": new_major,
         "minor": new_minor
     }
+
+async def get_story_versions(story_id: str) -> list[dict]:
+    """
+    Obtiene todas las versiones de una historia de Supabase.
+    """
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        raise HTTPException(500, "Supabase no configurado")
+
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    async with httpx.AsyncClient() as client:
+        query = (
+            f"{SUPABASE_URL}/rest/v1/story_versions"
+            f"?story_id=eq.{story_id}"
+            f"&order=major.desc,minor.desc"
+        )
+
+        response = await client.get(query, headers=headers)
+
+        if response.status_code != 200:
+            raise HTTPException(500, "Error al obtener las versiones de la historia")
+
+        return response.json()

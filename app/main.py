@@ -11,10 +11,12 @@ from fastapi.responses import Response
 import httpx
 
 
-from app.schemas import StoryResponse, Tono, Formato, EditNarrativeRequest    
+from app.schemas import StoryResponse, Tono, Formato, EditNarrativeRequest, StoryVersionList, ExportRequest, ExportFormat
 from app.services.text_processor import preprocess_text
 from app.services.generator import generate_narrative
-from app.services.storage import generate_story_id, save_story_to_supabase
+from app.services.storage import generate_story_id, save_story_to_supabase, get_story_versions
+from app.services.exporter import export_to_html, export_to_pdf
+
 
 import time
 
@@ -120,3 +122,27 @@ async def save_edit(req: EditNarrativeRequest):
 def read_root():
     """Endpoint de health check para verificar que la API está funcionando."""
     return {"status": "ok", "message": "Welcome to AutoStory Builder API"}
+
+@app.get("/story/{story_id}/versions", response_model=StoryVersionList)
+async def get_story_versions_endpoint(story_id: str):
+    """
+    Endpoint para obtener todas las versiones de una historia.
+    """
+    versions = await get_story_versions(story_id)
+    return {"versions": versions}
+
+@app.post("/story/export")
+async def export_story_endpoint(req: ExportRequest):
+    """
+    Exporta la narrativa en PDF o HTML utilizando WeasyPrint.
+    """
+    if req.format == ExportFormat.PDF:
+        try:
+            pdf_bytes = export_to_pdf(req.narrative)
+            return Response(content=pdf_bytes, media_type="application/pdf")
+        except Exception as e:
+            return Response(content=str(e), status_code=500)
+
+    elif req.format == ExportFormat.HTML:
+        html_str = export_to_html(req.narrative)
+        return Response(content=html_str, media_type="text/html")
