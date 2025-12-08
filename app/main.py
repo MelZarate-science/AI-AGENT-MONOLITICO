@@ -32,7 +32,7 @@ app.add_middleware(
   allow_origins=[
     "https://auto-story-builder-one.vercel.app",
     "https://id-preview--e5b4310e-df83-40ed-a563-fc6551a3d19e.lovable.app",
-    "http://localhost:5173" # Añadido para desarrollo local
+    "http://localhost:8080" # Añadido para desarrollo local
   ],
   allow_credentials=True,
   allow_methods=["*"],
