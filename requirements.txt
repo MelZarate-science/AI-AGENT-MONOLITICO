@@ -5,4 +5,4 @@ python-dotenv
 google-generativeai
 httpx
 Jinja2
-pdfkit
+WeasyPrint==62.3
