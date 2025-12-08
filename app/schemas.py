@@ -60,6 +60,14 @@ class ExportFormat(str, Enum):
     PDF = "pdf"
     HTML = "html"
 
+    @classmethod
+    def _missing_(cls, value):
+        # Permite la coincidencia de formato sin importar mayúsculas/minúsculas
+        for member in cls:
+            if member.value.lower() == value.lower():
+                return member
+        return None
+
 class ExportRequest(BaseModel):
     narrative: str
     format: ExportFormat
