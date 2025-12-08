@@ -139,10 +139,18 @@ async def export_story_endpoint(req: ExportRequest):
     if req.format == ExportFormat.PDF:
         try:
             pdf_bytes = export_to_pdf(req.narrative)
-            return Response(content=pdf_bytes, media_type="application/pdf")
+            return Response(
+                content=pdf_bytes,
+                media_type="application/pdf",
+                headers={"Content-Disposition": "attachment; filename=narrativa.pdf"}
+            )
         except Exception as e:
             return Response(content=str(e), status_code=500)
 
     elif req.format == ExportFormat.HTML:
         html_str = export_to_html(req.narrative)
-        return Response(content=html_str, media_type="text/html")
+        return Response(
+            content=html_str,
+            media_type="text/html",
+            headers={"Content-Disposition": "attachment; filename=narrativa.html"}
+        )
