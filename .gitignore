@@ -10,6 +10,7 @@ __pycache__/
 # Base de Datos Local
 *.sqlite3
 *.log
+.env
 
 # NOTA: EL ARCHIVO .env NO ESTÁ AQUÍ (como lo solicitaste). 
 # Asegúrate de que tu repositorio sea PRIVADO.
